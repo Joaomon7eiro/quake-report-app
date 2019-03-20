@@ -15,12 +15,13 @@
  */
 package com.example.android.quakereport;
 
+import android.app.LoaderManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.Loader;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -30,14 +31,14 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
-public class EarthquakeActivity extends AppCompatActivity {
+public class EarthquakeActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<List<Earthquake>> {
 
     public static final String LOG_TAG = EarthquakeActivity.class.getName();
     private static final String BASE_URL = "https://earthquake.usgs.gov/fdsnws/event/1/query?";
+    private static final int LOADER_ID = 1;
     String mUrl;
     EarthquakeArrayAdapter mAdapter;
     ProgressBar mLoadingProgressBar;
@@ -99,8 +100,9 @@ public class EarthquakeActivity extends AppCompatActivity {
         if (networkInfo != null && networkInfo.isConnected()) {
             mInfoText.setVisibility(View.GONE);
             mTryAgainButton.setVisibility(View.GONE);
-            EarthquakeAsyncTask earthquakeAsyncTask = new EarthquakeAsyncTask(mLoadingProgressBar, mAdapter);
-            earthquakeAsyncTask.execute(mUrl);
+
+            LoaderManager loaderManager = getLoaderManager();
+            loaderManager.initLoader(LOADER_ID, null, this);
         } else {
             mInfoText.setText(R.string.verify_connection);
             mInfoText.setVisibility(View.VISIBLE);
@@ -108,40 +110,23 @@ public class EarthquakeActivity extends AppCompatActivity {
         }
     }
 
-    private class EarthquakeAsyncTask extends AsyncTask<String, Void, List<Earthquake>> {
-        private WeakReference<ProgressBar> mProgressBar;
-        private WeakReference<EarthquakeArrayAdapter> mEarthquakeAdapter;
+    @Override
+    public Loader<List<Earthquake>> onCreateLoader(int i, Bundle bundle) {
+        mLoadingProgressBar.setVisibility(View.VISIBLE);
+        return new EarthquakeLoader(this, mUrl);
+    }
 
-        public EarthquakeAsyncTask(ProgressBar progressBar, EarthquakeArrayAdapter adapter) {
-            mProgressBar = new WeakReference<>(progressBar);
-            mEarthquakeAdapter = new WeakReference<>(adapter);
+    @Override
+    public void onLoadFinished(Loader<List<Earthquake>> loader, List<Earthquake> earthquakes) {
+        mLoadingProgressBar.setVisibility(View.GONE);
+        mAdapter.clear();
+        if (earthquakes != null && !earthquakes.isEmpty()) {
+            mAdapter.addAll(earthquakes);
         }
+    }
 
-        @Override
-        protected void onPreExecute() {
-            mProgressBar.get().setVisibility(View.VISIBLE);
-        }
-
-        @Override
-        protected List<Earthquake> doInBackground(String... urls) {
-            if (urls[0] == null || urls.length < 1) {
-                return null;
-            }
-            // Create a list of earthquake locations.
-            List<Earthquake> earthquakesResults = QueryUtils.extractEarthquakes(urls[0]);
-            return earthquakesResults;
-        }
-
-        @Override
-        protected void onPostExecute(List<Earthquake> earthquakeArrayList) {
-            mProgressBar.get().setVisibility(View.GONE);
-            // Clear the adapter of previous earthquake data
-            mEarthquakeAdapter.get().clear();
-            // If there is a valid list of {@link Earthquake}s, then add them to the adapter's
-            // data set. This will trigger the ListView to update.
-            if (earthquakeArrayList != null && !earthquakeArrayList.isEmpty()) {
-                mEarthquakeAdapter.get().addAll(earthquakeArrayList);
-            }
-        }
+    @Override
+    public void onLoaderReset(Loader<List<Earthquake>> loader) {
+        mAdapter.clear();
     }
 }
