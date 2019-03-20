@@ -56,7 +56,7 @@ public class EarthquakeActivity extends AppCompatActivity {
         });
 
         HttpRequestTask httpRequestTask = new HttpRequestTask();
-        httpRequestTask.execute();
+        httpRequestTask.execute(URL_TO_REQUEST);
     }
 
     private class HttpRequestTask extends AsyncTask<String, Void, ArrayList<Earthquake>> {
@@ -65,8 +65,9 @@ public class EarthquakeActivity extends AppCompatActivity {
             if (urls[0] == null || urls.length < 1) {
                 return null;
             }
-            // Create a list of earthquake locations and return.
-            return QueryUtils.extractEarthquakes(URL_TO_REQUEST);
+            // Create a list of earthquake locations.
+            ArrayList<Earthquake> earthquakesResults = QueryUtils.extractEarthquakes(urls[0]);
+            return earthquakesResults;
         }
 
         @Override
