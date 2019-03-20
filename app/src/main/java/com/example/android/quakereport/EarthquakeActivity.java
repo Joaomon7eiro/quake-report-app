@@ -31,6 +31,9 @@ import java.util.ArrayList;
 public class EarthquakeActivity extends AppCompatActivity {
 
     public static final String LOG_TAG = EarthquakeActivity.class.getName();
+    private static final String URL_TO_REQUEST = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&eventtype=earthquake&orderby=time&minmag=6&limit=10";
+
+    EarthquakeArrayAdapter mAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,48 +41,43 @@ public class EarthquakeActivity extends AppCompatActivity {
         setContentView(R.layout.earthquake_activity);
 
         ListView earthquakeListView = (ListView) findViewById(R.id.list);
-        HttpRequestTask httpRequestTask = new HttpRequestTask(earthquakeListView);
+        mAdapter = new EarthquakeArrayAdapter(this, new ArrayList<Earthquake>());
+        earthquakeListView.setAdapter(mAdapter);
+
+        earthquakeListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                Earthquake earthquake = (Earthquake) mAdapter.getItem(i);
+                Uri url = Uri.parse(earthquake.getUrlLink());
+
+                Intent intent = new Intent(Intent.ACTION_VIEW, url);
+                startActivity(intent);
+            }
+        });
+
+        HttpRequestTask httpRequestTask = new HttpRequestTask();
         httpRequestTask.execute();
     }
 
-    private class HttpRequestTask extends AsyncTask<String, Void, ArrayList<Earthquake>>{
-        WeakReference<ListView> mListView;
-
-        public HttpRequestTask(ListView listView) {
-            mListView = new WeakReference<>(listView);
-        }
-
+    private class HttpRequestTask extends AsyncTask<String, Void, ArrayList<Earthquake>> {
         @Override
-        protected ArrayList<Earthquake> doInBackground(String... strings) {
-            ArrayList<Earthquake> earthquakes = null;
-            // Create a fake list of earthquake locations.
-            try {
-                 earthquakes = QueryUtils.extractEarthquakes();
-            } catch (Exception e) {
-                e.printStackTrace();
+        protected ArrayList<Earthquake> doInBackground(String... urls) {
+            if (urls[0] == null || urls.length < 1) {
+                return null;
             }
-            return earthquakes;
+            // Create a list of earthquake locations and return.
+            return QueryUtils.extractEarthquakes(URL_TO_REQUEST);
         }
 
         @Override
         protected void onPostExecute(ArrayList<Earthquake> earthquakeArrayList) {
-            // Create a new {@link ArrayAdapter} of earthquakes
-            final EarthquakeArrayAdapter adapter = new EarthquakeArrayAdapter(getApplication(),
-                    earthquakeArrayList);
-            // Set the adapter on the {@link ListView}
-            // so the list can be populated in the user interface
-            mListView.get().setAdapter(adapter);
-
-            mListView.get().setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                    Earthquake earthquake = (Earthquake) adapter.getItem(i);
-                    Uri url = Uri.parse(earthquake.getUrlLink());
-
-                    Intent intent = new Intent(Intent.ACTION_VIEW, url);
-                    startActivity(intent);
-                }
-            });
+            // Clear the adapter of previous earthquake data
+            mAdapter.clear();
+            // If there is a valid list of {@link Earthquake}s, then add them to the adapter's
+            // data set. This will trigger the ListView to update.
+            if (earthquakeArrayList != null && !earthquakeArrayList.isEmpty()) {
+                mAdapter.addAll(earthquakeArrayList);
+            }
         }
     }
 }
