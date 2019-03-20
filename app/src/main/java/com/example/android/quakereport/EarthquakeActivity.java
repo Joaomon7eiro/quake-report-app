@@ -36,8 +36,8 @@ import java.util.ArrayList;
 public class EarthquakeActivity extends AppCompatActivity {
 
     public static final String LOG_TAG = EarthquakeActivity.class.getName();
-    private static final String URL_TO_REQUEST = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&eventtype=earthquake&orderby=time&minmag=6&limit=10";
-
+    private static final String BASE_URL = "https://earthquake.usgs.gov/fdsnws/event/1/query?";
+    String mUrl;
     EarthquakeArrayAdapter mAdapter;
     ProgressBar mLoadingProgressBar;
     TextView mInfoText;
@@ -74,6 +74,16 @@ public class EarthquakeActivity extends AppCompatActivity {
             }
         });
 
+        Uri builtURI = Uri.parse(BASE_URL).buildUpon()
+                .appendQueryParameter("format", "geojson")
+                .appendQueryParameter("eventtype", "earthquake")
+                .appendQueryParameter("orderby", "time")
+                .appendQueryParameter("minmag", "4")
+                .appendQueryParameter("limit", "10")
+                .build();
+
+        mUrl = builtURI.toString();
+
         performHttpRequest();
     }
 
@@ -89,7 +99,7 @@ public class EarthquakeActivity extends AppCompatActivity {
             mInfoText.setVisibility(View.GONE);
             mTryAgainButton.setVisibility(View.GONE);
             EarthquakeAsyncTask earthquakeAsyncTask = new EarthquakeAsyncTask(mLoadingProgressBar, mAdapter);
-            earthquakeAsyncTask.execute(URL_TO_REQUEST);
+            earthquakeAsyncTask.execute(mUrl);
         } else {
             mInfoText.setText(R.string.verify_connection);
             mInfoText.setVisibility(View.VISIBLE);
