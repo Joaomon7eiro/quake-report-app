@@ -32,6 +32,7 @@ import android.widget.TextView;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.List;
 
 public class EarthquakeActivity extends AppCompatActivity {
 
@@ -78,7 +79,7 @@ public class EarthquakeActivity extends AppCompatActivity {
                 .appendQueryParameter("format", "geojson")
                 .appendQueryParameter("eventtype", "earthquake")
                 .appendQueryParameter("orderby", "time")
-                .appendQueryParameter("minmag", "4")
+                .appendQueryParameter("minmag", "5")
                 .appendQueryParameter("limit", "10")
                 .build();
 
@@ -107,7 +108,7 @@ public class EarthquakeActivity extends AppCompatActivity {
         }
     }
 
-    private class EarthquakeAsyncTask extends AsyncTask<String, Void, ArrayList<Earthquake>> {
+    private class EarthquakeAsyncTask extends AsyncTask<String, Void, List<Earthquake>> {
         private WeakReference<ProgressBar> mProgressBar;
         private WeakReference<EarthquakeArrayAdapter> mEarthquakeAdapter;
 
@@ -122,17 +123,17 @@ public class EarthquakeActivity extends AppCompatActivity {
         }
 
         @Override
-        protected ArrayList<Earthquake> doInBackground(String... urls) {
+        protected List<Earthquake> doInBackground(String... urls) {
             if (urls[0] == null || urls.length < 1) {
                 return null;
             }
             // Create a list of earthquake locations.
-            ArrayList<Earthquake> earthquakesResults = QueryUtils.extractEarthquakes(urls[0]);
+            List<Earthquake> earthquakesResults = QueryUtils.extractEarthquakes(urls[0]);
             return earthquakesResults;
         }
 
         @Override
-        protected void onPostExecute(ArrayList<Earthquake> earthquakeArrayList) {
+        protected void onPostExecute(List<Earthquake> earthquakeArrayList) {
             mProgressBar.get().setVisibility(View.GONE);
             // Clear the adapter of previous earthquake data
             mEarthquakeAdapter.get().clear();
