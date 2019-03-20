@@ -30,8 +30,7 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import org.w3c.dom.Text;
-
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
 public class EarthquakeActivity extends AppCompatActivity {
@@ -89,7 +88,7 @@ public class EarthquakeActivity extends AppCompatActivity {
         if (networkInfo != null && networkInfo.isConnected()) {
             mInfoText.setVisibility(View.GONE);
             mTryAgainButton.setVisibility(View.GONE);
-            EarthquakeAsyncTask earthquakeAsyncTask = new EarthquakeAsyncTask();
+            EarthquakeAsyncTask earthquakeAsyncTask = new EarthquakeAsyncTask(mLoadingProgressBar, mAdapter);
             earthquakeAsyncTask.execute(URL_TO_REQUEST);
         } else {
             mInfoText.setText(R.string.verify_connection);
@@ -99,10 +98,17 @@ public class EarthquakeActivity extends AppCompatActivity {
     }
 
     private class EarthquakeAsyncTask extends AsyncTask<String, Void, ArrayList<Earthquake>> {
+        private WeakReference<ProgressBar> mProgressBar;
+        private WeakReference<EarthquakeArrayAdapter> mEarthquakeAdapter;
+
+        public EarthquakeAsyncTask(ProgressBar progressBar, EarthquakeArrayAdapter adapter) {
+            mProgressBar = new WeakReference<>(progressBar);
+            mEarthquakeAdapter = new WeakReference<>(adapter);
+        }
 
         @Override
         protected void onPreExecute() {
-            mLoadingProgressBar.setVisibility(View.VISIBLE);
+            mProgressBar.get().setVisibility(View.VISIBLE);
         }
 
         @Override
@@ -117,13 +123,13 @@ public class EarthquakeActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(ArrayList<Earthquake> earthquakeArrayList) {
-            mLoadingProgressBar.setVisibility(View.GONE);
+            mProgressBar.get().setVisibility(View.GONE);
             // Clear the adapter of previous earthquake data
-            mAdapter.clear();
+            mEarthquakeAdapter.get().clear();
             // If there is a valid list of {@link Earthquake}s, then add them to the adapter's
             // data set. This will trigger the ListView to update.
             if (earthquakeArrayList != null && !earthquakeArrayList.isEmpty()) {
-                mAdapter.addAll(earthquakeArrayList);
+                mEarthquakeAdapter.get().addAll(earthquakeArrayList);
             }
         }
     }
