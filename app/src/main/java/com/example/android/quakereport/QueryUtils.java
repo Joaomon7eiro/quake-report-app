@@ -6,6 +6,12 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 
 /**
@@ -37,7 +43,11 @@ public final class QueryUtils {
      * Return a list of {@link Earthquake} objects that has been built up from
      * parsing a JSON response.
      */
-    public static ArrayList<Earthquake> extractEarthquakes() {
+    public static ArrayList<Earthquake> extractEarthquakes(String urlString) {
+
+        URL url = createUrl(urlString);
+
+        ArrayList<Earthquake> earthquakes = makeHttpRequest(url);
 
         // Create an empty ArrayList that we can start adding earthquakes to
         ArrayList<Earthquake> earthquakes = new ArrayList<>();
@@ -73,6 +83,46 @@ public final class QueryUtils {
 
         // Return the list of earthquakes
         return earthquakes;
+    }
+
+    private static ArrayList<Earthquake> makeHttpRequest(URL url) {
+        String jsonResponse = "";
+        InputStream inputStream = null;
+        HttpURLConnection urlConnection
+        try {
+            urlConnection = (HttpURLConnection) url.openConnection();
+            urlConnection.setConnectTimeout(10000);
+            urlConnection.setReadTimeout(10000);
+            urlConnection.setRequestMethod("GET");
+            urlConnection.connect();
+            if (urlConnection.getResponseCode() == 200) {
+                inputStream = urlConnection.getInputStream();
+                jsonResponse = readInputStream(inputStream);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+        return earthquakes;
+    }
+
+    private static String readInputStream(InputStream inputStream) {
+        InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+        StringBuilder stringBuilder = new StringBuilder();
+
+    }
+
+    private static URL createUrl(String urlString) {
+        URL url = null;
+
+        try {
+            url = new URL(urlString);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+
+        return url;
     }
 
 }
