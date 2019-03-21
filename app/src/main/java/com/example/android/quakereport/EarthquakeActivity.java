@@ -19,11 +19,15 @@ import android.app.LoaderManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.Loader;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
@@ -76,17 +80,28 @@ public class EarthquakeActivity extends AppCompatActivity implements LoaderManag
             }
         });
 
-        Uri builtURI = Uri.parse(BASE_URL).buildUpon()
-                .appendQueryParameter("format", "geojson")
-                .appendQueryParameter("eventtype", "earthquake")
-                .appendQueryParameter("orderby", "time")
-                .appendQueryParameter("minmag", "5")
-                .appendQueryParameter("limit", "10")
-                .build();
-
-        mUrl = builtURI.toString();
-
         performHttpRequest();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+
+        switch (id) {
+            case R.id.filter:
+                Intent intent = new Intent(this, SettingsActivity.class);
+                startActivity(intent);
+                return true;
+            default:
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 
     private void performHttpRequest() {
@@ -113,6 +128,28 @@ public class EarthquakeActivity extends AppCompatActivity implements LoaderManag
     @Override
     public Loader<List<Earthquake>> onCreateLoader(int i, Bundle bundle) {
         mLoadingProgressBar.setVisibility(View.VISIBLE);
+
+        SharedPreferences sharedPreferences = PreferenceManager
+                .getDefaultSharedPreferences(this);
+
+        String minMagnitude = sharedPreferences.getString(
+                getString(R.string.settings_min_magnitude_key),
+                getString(R.string.settings_min_magnitude_default));
+
+        String orderBy = sharedPreferences.getString(
+                getString(R.string.settings_order_by_key),
+                getString(R.string.settings_min_magnitude_default)
+        );
+
+        Uri builtURI = Uri.parse(BASE_URL).buildUpon()
+                .appendQueryParameter("format", "geojson")
+                .appendQueryParameter("orderby", orderBy)
+                .appendQueryParameter("minmag", minMagnitude)
+                .appendQueryParameter("limit", "10")
+                .build();
+
+        mUrl = builtURI.toString();
+
         return new EarthquakeLoader(this, mUrl);
     }
 
